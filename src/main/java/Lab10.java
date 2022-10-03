@@ -8,33 +8,36 @@ public class Lab10 {
 
 
     public static void main(String[] args) throws InterruptedException {
+        Thread thread = new MyThread();
+        thread.start();
+        printMain();
+    }
+
+    public static void printMain() throws InterruptedException {
         for (int i = 0; i < 10; i++) {
-            Thread thread = new MyThread(i);
-            thread.start();
-            sleep(10);
+            semaphore.acquire();
             System.out.println("Hello from main " + i);
+            semaphore.release();
+            sleep(100);
         }
     }
 
     public static class MyThread extends Thread {
-        int i;
-
-        public MyThread(int i) {
-            this.i = i;
-        }
 
         @Override
         public void run() {
-            try {
-                semaphore.acquire();
+            for (int i = 0; i < 10; i++) {
                 try {
-                    System.out.println("hello from child " + i);
-                    sleep(10);
-                } finally {
-                    semaphore.release();
+                    semaphore.acquire();
+                    try {
+                        System.out.println("hello from child " + i);
+                    } finally {
+                        semaphore.release();
+                        sleep(100);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
     }
