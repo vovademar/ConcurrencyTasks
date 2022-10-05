@@ -8,7 +8,6 @@ public class Lab11 {
     static Semaphore mainSemaphore = new Semaphore(1);
 
 
-
     public static void main(String[] args) throws InterruptedException {
         Thread thread = new MyThread();
         thread.start();

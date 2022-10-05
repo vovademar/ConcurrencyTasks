@@ -4,8 +4,7 @@ import static java.lang.Thread.sleep;
 
 public class Lab10 {
 
-    static Semaphore semaphore = new Semaphore(1);
-
+    static Semaphore binarySemaphore = new Semaphore(1);
 
     public static void main(String[] args) throws InterruptedException {
         Thread thread = new MyThread();
@@ -15,9 +14,9 @@ public class Lab10 {
 
     public static void printMain() throws InterruptedException {
         for (int i = 0; i < 10; i++) {
-            semaphore.acquire();
+            binarySemaphore.acquire();
             System.out.println("Hello from main " + i);
-            semaphore.release();
+            binarySemaphore.release();
             sleep(100);
         }
     }
@@ -28,11 +27,11 @@ public class Lab10 {
         public void run() {
             for (int i = 0; i < 10; i++) {
                 try {
-                    semaphore.acquire();
+                    binarySemaphore.acquire();
                     try {
                         System.out.println("hello from child " + i);
                     } finally {
-                        semaphore.release();
+                        binarySemaphore.release();
                         sleep(100);
                     }
                 } catch (InterruptedException e) {
