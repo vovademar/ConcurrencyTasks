@@ -1,3 +1,5 @@
+import static java.lang.Thread.sleep;
+
 public class Lab9 {
 
     public static void main(String[] args) throws InterruptedException {
@@ -10,7 +12,7 @@ public class Lab9 {
             Object leftFork = forks[i];
             Object rightFork = forks[(i + 1) % forks.length];
             if (i == philosophers.length - 1) {
-                philosophers[i] = new Philosopher(rightFork, leftFork);
+                philosophers[i] = new Philosopher(leftFork, forks[0]);
             } else {
                 philosophers[i] = new Philosopher(leftFork, rightFork);
             }
@@ -33,8 +35,11 @@ public class Lab9 {
             try {
                 while (true) {
                     doAction("Thinking");
+                    System.out.println(Thread.currentThread().getName() + " is going to pick up left fork ");
                     synchronized (leftFork) {
                         doAction("Picked up left fork");
+                        System.out.println(Thread.currentThread().getName() + " is going to pick up right fork ");
+                        sleep(1000);
                         synchronized (rightFork) {
                             doAction("Picked up right fork - eating");
                             doAction("Put down right fork");
@@ -49,7 +54,7 @@ public class Lab9 {
 
         private void doAction(String action) throws InterruptedException {
             System.out.println(Thread.currentThread().getName() + " " + action);
-            Thread.sleep(((int) (Math.random() * 1500)));
+            sleep(((int) (Math.random() * 1500)));
         }
     }
 }
