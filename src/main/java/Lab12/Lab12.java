@@ -12,7 +12,15 @@ public class Lab12 {
         Scanner in = new Scanner(System.in);
         String str = in.nextLine();
         while (str.compareTo("") != 0) {
-            list.add(str);
+            if (str.length() >= 80) {
+                String[] lines = str.split("(?<=\\G.{" + 80 + "})");
+                for (String line : lines) {
+                    list.add(line);
+                }
+            }
+            else {
+                list.add(str);
+            }
             str = in.nextLine();
         }
         list.print();

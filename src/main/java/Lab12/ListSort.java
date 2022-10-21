@@ -1,10 +1,10 @@
 package Lab12;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class ListSort {
-    public static List<String> list = new ArrayList<>();
+    public static List<String> list = new LinkedList<>();
     private boolean needSorting = false;
 
     public boolean isNeedSorting() {
