@@ -28,7 +28,7 @@ public class Lab13 {
     }
 
     public static class Philosopher implements Runnable {
-        private boolean isEating = false;
+        private boolean food = false;
         private ReentrantLock leftFork;
         private ReentrantLock rightFork;
 
@@ -44,24 +44,23 @@ public class Lab13 {
                 while (true) {
                     doAction("Thinking");
                     forkLocker.lock();
-                    while (!isEating) {
+                    while (!food) {
                         if (leftFork.tryLock()) {
                             doAction("Picked up left fork");
                             if (rightFork.tryLock()) {
                                 forkLocker.unlock();
                                 doAction("Picked up right fork - eating");
-                                isEating = true;
+                                food = true;
                                 doAction("Put down right fork");
                                 rightFork.unlock();
+                                forkLocker.lock();
                             }
                             leftFork.unlock();
                             doAction("Put down left fork. Back to thinking");
                         }
-                        if (isEating) {
-                            forkLocker.lock();
+                        if (food) {
                             condition.signalAll();
                             forkLocker.unlock();
-                            break;
                         } else {
                             try {
                                 condition.await();
@@ -70,7 +69,7 @@ public class Lab13 {
                             }
                         }
                     }
-                    isEating = false;
+                    food = false;
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
