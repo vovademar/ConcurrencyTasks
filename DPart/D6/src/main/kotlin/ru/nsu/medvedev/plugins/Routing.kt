@@ -4,10 +4,9 @@ import io.ktor.http.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.application.*
+import io.ktor.server.routing.Route
 import ru.nsu.medvedev.database.DAO
-import ru.nsu.medvedev.entities.Airport
-import ru.nsu.medvedev.entities.City
-import ru.nsu.medvedev.entities.Flight
+import ru.nsu.medvedev.entities.*
 
 fun Application.configureRouting() {
     val dao = DAO()
@@ -60,7 +59,6 @@ fun Application.configureRouting() {
                 call.respond(HttpStatusCode.BadRequest, "You didn't specified airport")
             }
             val flights = dao.getInboundSchedule(airportCode!!)
-            println(flights)
             if (flights.isEmpty()) {
                 call.respond(
                     HttpStatusCode.BadRequest,
@@ -89,7 +87,6 @@ fun Application.configureRouting() {
                 call.respond(HttpStatusCode.BadRequest, "You didn't specified airport")
             }
             val flights = dao.getOutboundSchedule(airportCode!!)
-            println(flights)
             if (flights.isEmpty()) {
                 call.respond(
                     HttpStatusCode.BadRequest,
@@ -110,6 +107,38 @@ fun Application.configureRouting() {
                 )
             }
             call.respond(HttpStatusCode.OK, flightRes)
+        }
+
+        get("/routes") {
+            val departureAirport = call.parameters["fromAirport"]
+            val arrivalAirport = call.parameters["toAirport"]
+            val fromDate = call.parameters["fromDate"]
+            val toDate = call.parameters["toDate"]
+            val seatType = call.parameters["seatType"]
+            val bounds = call.parameters["bounds"]
+            if (departureAirport == null || arrivalAirport == null ||
+                fromDate == null || toDate == null || seatType == null || bounds == null
+            ) {
+                call.respond(HttpStatusCode.BadRequest, "You didn't specified all params")
+            }
+
+            val routes = dao.getRoutes(departureAirport!!, arrivalAirport!!, fromDate!!, toDate!!, seatType!!, bounds!!)
+            if (routes.isEmpty()){
+                call.respond(HttpStatusCode.BadRequest, "Route from $departureAirport to $arrivalAirport not found")
+            }
+            val routeRes = ArrayList<RoutePaths>()
+            routes.forEach{
+                routeRes.add(
+                    RoutePaths(
+                        it.arrivalAirport,
+                        it.path,
+                        it.seatType,
+                        it.departureDate,
+                        it.arrivalDate
+                    )
+                )
+            }
+            call.respond(HttpStatusCode.OK, routeRes)
         }
 
 

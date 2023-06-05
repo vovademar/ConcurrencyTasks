@@ -3,7 +3,6 @@ package ru.nsu.medvedev
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import ru.nsu.medvedev.plugins.configureDatabases
 import ru.nsu.medvedev.plugins.configureRouting
 import ru.nsu.medvedev.plugins.configureSerialization
 
@@ -14,6 +13,5 @@ fun main() {
 
 fun Application.module() {
     configureSerialization()
-    configureDatabases()
     configureRouting()
 }
