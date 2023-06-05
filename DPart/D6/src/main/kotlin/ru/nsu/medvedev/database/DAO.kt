@@ -1,11 +1,9 @@
 package ru.nsu.medvedev.database
 
-import ru.nsu.medvedev.entities.Airport
-import ru.nsu.medvedev.entities.City
-import ru.nsu.medvedev.entities.Flight
-import ru.nsu.medvedev.entities.RoutePaths
+import ru.nsu.medvedev.entities.*
 import java.sql.Connection
 import java.sql.DriverManager
+import java.util.*
 
 class DAO {
     private lateinit var connection: Connection
@@ -17,7 +15,7 @@ class DAO {
         this.connection = DriverManager.getConnection(url, user, password)
     }
 
-     fun getCities(): MutableSet<City>{
+    fun getCities(): MutableSet<City> {
         val cities: MutableSet<City> = mutableSetOf()
         val statement = connection.createStatement()
         val queryRes = statement.executeQuery("SELECT city FROM airports;")
@@ -27,69 +25,88 @@ class DAO {
         return cities
     }
 
-    fun getAirports(): MutableSet<Airport>{
+    fun getAirports(): MutableSet<Airport> {
         val airports: MutableSet<Airport> = mutableSetOf()
         val statement = connection.createStatement()
         val queryRes = statement.executeQuery("SELECT * FROM airports;")
-        while (queryRes.next()){
-            airports.add(Airport(code = queryRes.getString("airport_code"),
-                city = queryRes.getString("city"),
-                name = queryRes.getString("airport_name"),
-                timezone = queryRes.getString("timezone"),
-                coordinates = queryRes.getString("coordinates")))
+        while (queryRes.next()) {
+            airports.add(
+                Airport(
+                    code = queryRes.getString("airport_code"),
+                    city = queryRes.getString("city"),
+                    name = queryRes.getString("airport_name"),
+                    timezone = queryRes.getString("timezone"),
+                    coordinates = queryRes.getString("coordinates")
+                )
+            )
         }
         return airports
     }
 
-    fun getAirportsWithCity(city: String): MutableSet<Airport>{
+    fun getAirportsWithCity(city: String): MutableSet<Airport> {
         val airports: MutableSet<Airport> = mutableSetOf()
         val statement = connection.createStatement()
         val queryRes = statement.executeQuery("SELECT * FROM airports WHERE city = '$city';")
-        while (queryRes.next()){
-            airports.add(Airport(code = queryRes.getString("airport_code"),
-                city = queryRes.getString("city"),
-                name = queryRes.getString("airport_name"),
-                timezone = queryRes.getString("timezone"),
-                coordinates = queryRes.getString("coordinates")))
+        while (queryRes.next()) {
+            airports.add(
+                Airport(
+                    code = queryRes.getString("airport_code"),
+                    city = queryRes.getString("city"),
+                    name = queryRes.getString("airport_name"),
+                    timezone = queryRes.getString("timezone"),
+                    coordinates = queryRes.getString("coordinates")
+                )
+            )
         }
         return airports
     }
 
-    fun getInboundSchedule(code: String): MutableSet<Flight>{
+    fun getInboundSchedule(code: String): MutableSet<Flight> {
         val flights: MutableSet<Flight> = mutableSetOf()
         val statement = connection.createStatement()
         val queryRes = statement.executeQuery("SELECT * FROM routes WHERE arrival_airport = '$code';")
-        while (queryRes.next()){
-            flights.add(Flight(flightNo = queryRes.getString("flight_no"),
-                departureAirport = queryRes.getString("departure_airport"),
-                departureCity = queryRes.getString("departure_city"),
-                arrivalAirport = queryRes.getString("arrival_airport"),
-                arrivalCity = queryRes.getString("arrival_city"),
-                days = queryRes.getString("days_of_week")))
+        while (queryRes.next()) {
+            flights.add(
+                Flight(
+                    flightNo = queryRes.getString("flight_no"),
+                    departureAirport = queryRes.getString("departure_airport"),
+                    departureCity = queryRes.getString("departure_city"),
+                    arrivalAirport = queryRes.getString("arrival_airport"),
+                    arrivalCity = queryRes.getString("arrival_city"),
+                    days = queryRes.getString("days_of_week")
+                )
+            )
         }
         return flights
     }
 
-    fun getOutboundSchedule(code: String): MutableSet<Flight>{
+    fun getOutboundSchedule(code: String): MutableSet<Flight> {
         val flights: MutableSet<Flight> = mutableSetOf()
         val statement = connection.createStatement()
         val queryRes = statement.executeQuery("SELECT * FROM routes WHERE departure_airport = '$code';")
-        while (queryRes.next()){
-            flights.add(Flight(flightNo = queryRes.getString("flight_no"),
-                departureAirport = queryRes.getString("departure_airport"),
-                departureCity = queryRes.getString("departure_city"),
-                arrivalAirport = queryRes.getString("arrival_airport"),
-                arrivalCity = queryRes.getString("arrival_city"),
-                days = queryRes.getString("days_of_week")))
+        while (queryRes.next()) {
+            flights.add(
+                Flight(
+                    flightNo = queryRes.getString("flight_no"),
+                    departureAirport = queryRes.getString("departure_airport"),
+                    departureCity = queryRes.getString("departure_city"),
+                    arrivalAirport = queryRes.getString("arrival_airport"),
+                    arrivalCity = queryRes.getString("arrival_city"),
+                    days = queryRes.getString("days_of_week")
+                )
+            )
         }
         return flights
     }
 
-    fun getRoutes(departureAirport:String, arrivalAirport: String, fromDate: String, toDate: String,
-                  seatType: String, countOfBounds: String): MutableSet<RoutePaths>{
+    fun getRoutes(
+        departureAirport: String, arrivalAirport: String, fromDate: String, toDate: String,
+        seatType: String, countOfBounds: String
+    ): MutableSet<RoutePaths> {
         val routes: MutableSet<RoutePaths> = mutableSetOf()
         val statement = connection.createStatement()
-        val queryRes = statement.executeQuery("""
+        val queryRes = statement.executeQuery(
+            """
             |select distinct arrivalAirport,
        path,
        tf.fare_conditions          as seatType,
@@ -119,45 +136,99 @@ from (with recursive branch as (select r.flight_no                       as flig
          join flights on flights.flight_no = rec.flightNo
     and flights.scheduled_arrival < '$toDate'
     and flights.scheduled_departure > '$fromDate'
-         join ticket_flights tf on flights.flight_id = tf.flight_id and tf.fare_conditions = '$seatType';""".trimMargin())
-        while (queryRes.next()){
+         join ticket_flights tf on flights.flight_id = tf.flight_id and tf.fare_conditions = '$seatType';""".trimMargin()
+        )
+        while (queryRes.next()) {
             routes.add(
-                RoutePaths(queryRes.getString("arrivalairport"), queryRes.getString("path"),
-                queryRes.getString("seattype"),
-                queryRes.getString("departuredate"),
-                queryRes.getString("arrivaldate"))
+                RoutePaths(
+                    queryRes.getString("arrivalairport"), queryRes.getString("path"),
+                    queryRes.getString("seattype"),
+                    queryRes.getString("departuredate"),
+                    queryRes.getString("arrivaldate")
+                )
             )
         }
         return routes
     }
 
 
-//    select *
-//    from (with recursive branch as (select r.flight_no,
-//    r.arrival_airport,
-//    r.departure_airport,
-//    cast(r.flight_no as varchar(100)) as path,
-//    0                                    cnt
-//    from routes r
-//
-//    where r.departure_airport = 'OVB'
-//    union all
-//    select t.flight_no,
-//    t.arrival_airport,
-//    t.departure_airport,
-//    cast(b.path || '->' || t.flight_no as varchar(100)),
-//    b.cnt + 1
-//    from branch b
-//    join routes t on t.departure_airport = b.arrival_airport
-//    where b.departure_airport <> 'DME'
-//    and b.cnt < 3)
-//    select *
-//    from branch s
-//    where s.arrival_airport = 'DME'
-//    and s.cnt = 1) rec join flights on flights.flight_no = rec.flight_no
-//    and flights.scheduled_arrival < '2017-09-11'
-//    and flights.scheduled_departure > '2017-09-09'
-//    join ticket_flights tf on flights.flight_id = tf.flight_id and tf.fare_conditions = 'Business'
-//
+    fun booking(
+        flightNo: String, seatType: String, date: String,
+        name: String, passengerID: String, phone: String
+    ): Ticket {
+        var statement = connection.createStatement()
+        var flightId = "0"
+        val flightidres = statement.executeQuery(
+            "select fl.flight_id flid from flights fl " +
+                    "where fl.flight_no = '$flightNo' " +
+                    "and fl.status = 'Scheduled' " +
+                    "and fl.scheduled_departure >= '$date' limit 1;\n"
+        )
+        while (flightidres.next()) {
+            flightId = flightidres.getString("flid")
+        }
+
+        var seatsLeft = 0
+        val seatsRes = statement.executeQuery(
+            "select count(*) - \n" +
+                    "(select count(*) from bookings.ticket_flights where fare_conditions = '$seatType' and flight_id = '$flightId') seatsLeft \n" +
+                    "from bookings.seats\n" +
+                    "where aircraft_code = (select aircraft_code from bookings.flights where flight_id = '$flightId' and fare_conditions = '$seatType');\n"
+        )
+        while (seatsRes.next()) {
+            seatsLeft = seatsRes.getInt("seatsLeft")
+        }
+        if (seatsLeft == 0) {
+            throw RuntimeException("not enough seats")
+        }
+
+        var price = "0"
+        val priceRes = statement.executeQuery(
+            "select amount price from bookings.ticket_flights " +
+                    "where flight_id = '$flightId' and fare_conditions = '$seatType' " +
+                    "order by amount limit 1;\n"
+        )
+        while (priceRes.next()) {
+            price = priceRes.getString("price")
+        }
+
+        val bookingUid = UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase()
+        statement = connection.createStatement()
+        statement.use {
+            val resSet = it.executeQuery("select count(*) from bookings.bookings where book_ref = '$bookingUid';")
+            while (resSet.next()) {
+                if (resSet.getInt("count") != 0) {
+                    connection.rollback()
+                    connection.autoCommit = true
+                    throw RuntimeException("we have the same booking_ref")
+                }
+            }
+        }
+
+        val ticketNo: String = UUID.randomUUID().toString().replace("-", "").substring(0, 13)
+        statement = connection.createStatement()
+        statement.use {
+            val resSet =
+                it.executeQuery("insert into bookings.bookings (book_ref, book_date, total_amount) " +
+                        "values ('$bookingUid', now(), $price) returning book_ref;")
+            while (resSet.next()) {
+                println(resSet.getString("book_ref"))
+            }
+        }
+
+        statement = connection.createStatement()
+        statement.use {
+            it.executeQuery("insert into bookings.tickets (ticket_no, book_ref, passenger_id, passenger_name, contact_data) " +
+                    "values ('$ticketNo', '$bookingUid', '$passengerID', '$name', '{\"phone\": \"$phone\"}') returning *;")
+        }
+
+        statement = connection.createStatement()
+        statement.use {
+            it.executeQuery("insert into bookings.ticket_flights (ticket_no, flight_id, fare_conditions, amount) " +
+                    "values ('$ticketNo', $flightId, '$seatType', $price) returning *;")
+        }
+
+        return Ticket(ticketNo, bookingUid, flightNo, seatType, price)
+    }
 
 }

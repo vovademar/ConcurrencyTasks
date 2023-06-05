@@ -4,7 +4,7 @@ import io.ktor.http.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.application.*
-import io.ktor.server.routing.Route
+import io.ktor.server.request.*
 import ru.nsu.medvedev.database.DAO
 import ru.nsu.medvedev.entities.*
 
@@ -123,11 +123,11 @@ fun Application.configureRouting() {
             }
 
             val routes = dao.getRoutes(departureAirport!!, arrivalAirport!!, fromDate!!, toDate!!, seatType!!, bounds!!)
-            if (routes.isEmpty()){
+            if (routes.isEmpty()) {
                 call.respond(HttpStatusCode.BadRequest, "Route from $departureAirport to $arrivalAirport not found")
             }
             val routeRes = ArrayList<RoutePaths>()
-            routes.forEach{
+            routes.forEach {
                 routeRes.add(
                     RoutePaths(
                         it.arrivalAirport,
@@ -141,7 +141,13 @@ fun Application.configureRouting() {
             call.respond(HttpStatusCode.OK, routeRes)
         }
 
-
+        put("/booking"){
+            val request = call.receive<BookingRequest>()
+            val ticket = dao.booking(request.flightNo,request.seatType,request.date,request.name,request.passengerID,request.phone)
+            val bookRes = Ticket(ticket.ticketNo, ticket.bookingCode, ticket.flightNo, ticket.setType, ticket.price)
+            println(bookRes)
+            call.respond(HttpStatusCode.OK, bookRes)
+        }
     }
 
 }
