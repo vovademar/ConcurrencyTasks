@@ -38,12 +38,11 @@
         ```json
         [
           {
-            "name": "New York"
+            "city": "Якутск"
           },
           {
-            "name": "London"
+            "city": "Мирный"
           },
-          ...
         ]
         ```
 
@@ -65,18 +64,17 @@
           {
             "code": "YKS",
             "name": "Якутск",
-        		"city": "Якутск",
-        		"coordinates": "(129.77099609375,62.093299865722656)",
-        		"timezone": "Asia/Yakutsk"
+            "city": "Якутск",
+            "coordinates": "(129.77099609375,62.093299865722656)",
+            "timezone": "Asia/Yakutsk"
           },
           {
             "code": "KHV",
             "name": "Хабаровск-Новый",
-        		"city": "Хабаровск",
-        		"coordinates": "(135.18800354004,48.52799987793)",
-        		"timezone": "Asia/Vladivostok"
+            "city": "Хабаровск",
+            "coordinates": "(135.18800354004,48.52799987793)",
+            "timezone": "Asia/Vladivostok"
           },
-          ...
         ]
         ```
 
@@ -110,7 +108,6 @@
                 "coordinates": "(37.2615013123,55.5914993286)",
                 "timezone": "Europe/Moscow"
             },
-          ...
         ]
         ```
 
