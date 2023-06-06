@@ -7,15 +7,13 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import ru.nsu.medvedev.database.DAO
 import ru.nsu.medvedev.entities.*
+import ru.nsu.medvedev.entities.request.BookingRequest
+import ru.nsu.medvedev.entities.request.CheckInRequest
 
 fun Application.configureRouting() {
     val dao = DAO()
     dao.connectToDB()
     routing {
-        get("/") {
-            call.respondText("Hello World!")
-        }
-//        airportRouting()
         get("/cities") {
             val cities = dao.getCities()
             if (cities.isEmpty()) {
@@ -141,12 +139,38 @@ fun Application.configureRouting() {
             call.respond(HttpStatusCode.OK, routeRes)
         }
 
-        put("/booking"){
-            val request = call.receive<BookingRequest>()
-            val ticket = dao.booking(request.flightNo,request.seatType,request.date,request.name,request.passengerID,request.phone)
-            val bookRes = Ticket(ticket.ticketNo, ticket.bookingCode, ticket.flightNo, ticket.setType, ticket.price)
-            println(bookRes)
-            call.respond(HttpStatusCode.OK, bookRes)
+        put("/booking") {
+            try {
+                val request = call.receive<BookingRequest>()
+                val ticket = dao.booking(
+                    request.flightNo,
+                    request.seatType,
+                    request.date,
+                    request.name,
+                    request.passengerID,
+                    request.phone
+                )
+                val bookRes = Ticket(ticket.ticketNo, ticket.bookingCode, ticket.flightNo, ticket.setType, ticket.price)
+                println(bookRes)
+                call.respond(HttpStatusCode.OK, bookRes)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "${e.message}")
+            }
+        }
+
+        put("/checkin") {
+            try {
+                val request = call.receive<CheckInRequest>()
+                val confirmation = dao.checkin(request.ticketNo)
+                call.respond(
+                    HttpStatusCode.OK,
+                    CheckIn(confirmation.seat, confirmation.boardingNo, confirmation.flightNo)
+                )
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "${e.message}")
+
+            }
+
         }
     }
 

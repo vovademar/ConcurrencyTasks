@@ -1,6 +1,7 @@
 package ru.nsu.medvedev.database
 
 import ru.nsu.medvedev.entities.*
+import java.lang.Exception
 import java.sql.Connection
 import java.sql.DriverManager
 import java.util.*
@@ -151,23 +152,53 @@ from (with recursive branch as (select r.flight_no                       as flig
         return routes
     }
 
+    private fun checkTicketNo(ticketNo: String, connection: Connection): Boolean {
+        val sqlQuery = "select ticket_no from bookings.tickets where ticket_no='$ticketNo';"
+        val statement = connection.createStatement()
+        statement.use {
+            val resSet = it.executeQuery(sqlQuery)
+            if (resSet.next()) {
+                connection.rollback()
+                connection.autoCommit = true
+                return false
+            }
+            return true
+        }
+    }
+
+    private fun checkBookRef(bookRef: String, connection: Connection): Boolean {
+        val sqlQuery = "select book_ref from bookings.bookings where book_ref='$bookRef';"
+        val statement = connection.createStatement()
+        statement.use {
+            val resSet = it.executeQuery(sqlQuery)
+            if (resSet.next()) {
+                connection.rollback()
+                connection.autoCommit = true
+                return false
+            }
+            return true
+        }
+    }
 
     fun booking(
         flightNo: String, seatType: String, date: String,
         name: String, passengerID: String, phone: String
     ): Ticket {
+
+        /* define flight id related on flightNo & date & flight status */
         var statement = connection.createStatement()
         var flightId = "0"
-        val flightidres = statement.executeQuery(
+        val flightIdres = statement.executeQuery(
             "select fl.flight_id flid from flights fl " +
                     "where fl.flight_no = '$flightNo' " +
                     "and fl.status = 'Scheduled' " +
                     "and fl.scheduled_departure >= '$date' limit 1;\n"
         )
-        while (flightidres.next()) {
-            flightId = flightidres.getString("flid")
+        while (flightIdres.next()) {
+            flightId = flightIdres.getString("flid")
         }
 
+        /* find out how many seats left */
         var seatsLeft = 0
         val seatsRes = statement.executeQuery(
             "select count(*) - \n" +
@@ -182,6 +213,7 @@ from (with recursive branch as (select r.flight_no                       as flig
             throw RuntimeException("not enough seats")
         }
 
+        /* define price of the ticket */
         var price = "0"
         val priceRes = statement.executeQuery(
             "select amount price from bookings.ticket_flights " +
@@ -192,7 +224,11 @@ from (with recursive branch as (select r.flight_no                       as flig
             price = priceRes.getString("price")
         }
 
-        val bookingUid = UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase()
+        /* create and insert bookingUid */
+        var bookingUid = UUID.randomUUID().toString().replace("-", "").substring(0, 6).uppercase(Locale.getDefault())
+        while (!checkBookRef(bookingUid, connection)) {
+            bookingUid = UUID.randomUUID().toString().replace("-", "").substring(0, 6).uppercase(Locale.getDefault())
+        }
         statement = connection.createStatement()
         statement.use {
             val resSet = it.executeQuery("select count(*) from bookings.bookings where book_ref = '$bookingUid';")
@@ -205,30 +241,130 @@ from (with recursive branch as (select r.flight_no                       as flig
             }
         }
 
-        val ticketNo: String = UUID.randomUUID().toString().replace("-", "").substring(0, 13)
+        /* create and insert ticketNo */
+        var ticketNo = (0..9999999999999L).random().toString()
+        while (!checkTicketNo(ticketNo, connection)) {
+            ticketNo = (0..9999999999999L).random().toString()
+        }
         statement = connection.createStatement()
         statement.use {
             val resSet =
-                it.executeQuery("insert into bookings.bookings (book_ref, book_date, total_amount) " +
-                        "values ('$bookingUid', now(), $price) returning book_ref;")
+                it.executeQuery(
+                    "insert into bookings.bookings (book_ref, book_date, total_amount) " +
+                            "values ('$bookingUid', now(), $price) returning book_ref;"
+                )
             while (resSet.next()) {
                 println(resSet.getString("book_ref"))
             }
         }
 
+        /* insert new data in tickets table */
         statement = connection.createStatement()
         statement.use {
-            it.executeQuery("insert into bookings.tickets (ticket_no, book_ref, passenger_id, passenger_name, contact_data) " +
-                    "values ('$ticketNo', '$bookingUid', '$passengerID', '$name', '{\"phone\": \"$phone\"}') returning *;")
+            it.executeQuery(
+                "insert into bookings.tickets (ticket_no, book_ref, passenger_id, passenger_name, contact_data) " +
+                        "values ('$ticketNo', '$bookingUid', '$passengerID', '$name', '{\"phone\": \"$phone\"}') returning *;"
+            )
         }
 
+        /* insert new data in ticket_flights table */
         statement = connection.createStatement()
         statement.use {
-            it.executeQuery("insert into bookings.ticket_flights (ticket_no, flight_id, fare_conditions, amount) " +
-                    "values ('$ticketNo', $flightId, '$seatType', $price) returning *;")
+            it.executeQuery(
+                "insert into bookings.ticket_flights (ticket_no, flight_id, fare_conditions, amount) " +
+                        "values ('$ticketNo', $flightId, '$seatType', $price) returning *;"
+            )
         }
 
         return Ticket(ticketNo, bookingUid, flightNo, seatType, price)
+    }
+
+    fun checkin(ticketNo: String): CheckIn {
+        /* check if ticked is already checked */
+        var sqlQuery = "select count(*) from bookings.boarding_passes where ticket_no = '$ticketNo';"
+        var statement = connection.createStatement()
+        statement.use {
+            val resSet = it.executeQuery(sqlQuery)
+            while (resSet.next()) {
+                if (resSet.getInt("count") != 0) {
+                    throw RuntimeException("the ticket is already checked")
+                }
+            }
+        }
+
+        /* define fare condition */
+        sqlQuery = "select fare_conditions from ticket_flights where ticket_no='$ticketNo';"
+        statement = connection.createStatement()
+        var queryRes = statement.executeQuery(sqlQuery)
+        var fareCondition = ""
+        while (queryRes.next()) {
+            fareCondition = queryRes.getString("fare_conditions")
+        }
+
+        /* define flightId */
+        var flightId = ""
+        sqlQuery = "select flight_id from ticket_flights where ticket_no='$ticketNo';"
+        statement = connection.createStatement()
+        queryRes = statement.executeQuery(sqlQuery)
+        if (!queryRes.next()) {
+            throw Exception("Sorry, not found ticket for $ticketNo")
+        } else {
+            flightId = queryRes.getString("flight_id")
+        }
+
+        /* define aircraft code */
+        sqlQuery = "select aircraft_code from bookings.flights where flight_id = $flightId;"
+        var aircraftCode = ""
+        statement = connection.createStatement()
+        statement.use {
+            val resSet = it.executeQuery(sqlQuery)
+            while (resSet.next()) {
+                aircraftCode = resSet.getString("aircraft_code")
+            }
+        }
+
+        /* find free seat */
+        sqlQuery = "select seat_no \n" +
+                "from bookings.seats \n" +
+                "where aircraft_code = '$aircraftCode' and fare_conditions = '$fareCondition' and seat_no not in \n" +
+                "(select seat_no from bookings.boarding_passes where flight_id = '$flightId') limit 1;"
+        var seat = ""
+        statement = connection.createStatement()
+        statement.use {
+            val resSet = it.executeQuery(sqlQuery)
+            while (resSet.next()) {
+                seat = resSet.getString("seat_no")
+            }
+        }
+
+        /* define boardingNo */
+        sqlQuery = "select count(*) from boarding_passes where flight_id='$flightId';"
+        statement = connection.createStatement()
+        queryRes = statement.executeQuery(sqlQuery)
+        var boardingNo = 0
+        while (queryRes.next()) {
+            boardingNo = queryRes.getInt("count")
+        }
+        boardingNo += 1
+
+        /* insert new info in boarding_passes */
+        sqlQuery = "insert into boarding_passes (ticket_no, flight_id, boarding_no, seat_no) " +
+                "values ('$ticketNo', '$flightId', '$boardingNo', '$seat') returning *;"
+        statement = connection.createStatement()
+        statement.use {
+            it.executeQuery(sqlQuery)
+        }
+
+        /* define flightNo */
+        sqlQuery = "select flight_no from flights where flight_id = '$flightId'\n"
+        statement = connection.createStatement()
+        queryRes = statement.executeQuery(sqlQuery)
+        var flightNo = ""
+        while (queryRes.next()) {
+            flightNo = queryRes.getString("flight_no")
+        }
+
+        return CheckIn(seat, boardingNo.toString(), flightNo)
     }
 
 }

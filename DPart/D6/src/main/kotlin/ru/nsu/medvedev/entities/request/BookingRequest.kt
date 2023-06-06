@@ -1,4 +1,4 @@
-package ru.nsu.medvedev.entities
+package ru.nsu.medvedev.entities.request
 
 import kotlinx.serialization.Serializable
 
