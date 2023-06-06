@@ -1,9 +1,9 @@
 # D5
 
 - **Task**
-    
-    Design the RESTful web service to handle the following requests:
-    
+
+  Design the RESTful web service to handle the following requests:
+
     - List all the available source and destination cities
     - List all the available source and destination airports
     - List the airports within a city
@@ -24,305 +24,289 @@
         - Additional parameter limits the number of connections: 0 (direct), 1, 2, 3, unbound
     - Create a booking for a selected route for a single passenger
     - Online check-in for a flight
-    
+
 - List all the available source and destination cities
-    
-    `GET /cities`
-    
+
+  `GET /cities`
+
     - *`return`* a list of cities
-    
-    Status code
-    
+
+  Status code
+
     - Status code 200 OK
-        
+
         ```json
         [
           {
-            "id": 1,
             "name": "New York"
           },
           {
-            "id": 2,
             "name": "London"
-          }
+          },
+          ...
         ]
         ```
-        
+
     - Status code 400 bad request
         - `"error" = "Cities are empty"`
-    
+
 - List all the available source and destination airports
-    
-    `GET /airports`
-    
+
+  `GET /airports`
+
     - *return* list of airports
-    
-    Status code
-    
+
+  Status code
+
     - Status code 200 OK
-        
+
         ```json
         [
           {
-            "id": 1,
-            "name": "Tolmachevo"
-        		"code": "OVB"
-        		"city": "Novosibirsk"
+            "code": "YKS",
+            "name": "Якутск",
+        		"city": "Якутск",
+        		"coordinates": "(129.77099609375,62.093299865722656)",
+        		"timezone": "Asia/Yakutsk"
           },
           {
-            "id": 2,
-            "name": "Domodedovo"
-        		"code": "DME"
-        		"city": "Moscow"
+            "code": "KHV",
+            "name": "Хабаровск-Новый",
+        		"city": "Хабаровск",
+        		"coordinates": "(135.18800354004,48.52799987793)",
+        		"timezone": "Asia/Vladivostok"
           },
           ...
         ]
         ```
-        
+
     - Status code 400 bad request
         - `"error" = "Airports are empty"`
-    
+
 - List the airports within a city
-    
-    `GET /cities?city=<Moscow>`
-    
+
+  `GET /airports?city=<Москва>`
+
     - **city** - parameter that represents the city name.
     - *return* list of airports
-    
-    Status code:
-    
+
+  Status code:
+
     - Status code 200 OK
-        
+
         ```json
         [
           {
-            "id": 1,
-            "name": "Vnukovo"
-        		"code": "VNU"
-        		"city": "Moscow"
-          },
-          {
-            "id": 2,
-            "name": "Domodedovo"
-        		"code": "DME"
-        		"city": "Moscow"
-          },
+                "code": "SVO",
+                "name": "Шереметьево",
+                "city": "Москва",
+                "coordinates": "(37.4146,55.972599)",
+                "timezone": "Europe/Moscow"
+            },
+            {
+                "code": "VKO",
+                "name": "Внуково",
+                "city": "Москва",
+                "coordinates": "(37.2615013123,55.5914993286)",
+                "timezone": "Europe/Moscow"
+            },
           ...
         ]
         ```
-        
+
     - Status code 400 bad request
         - `"error" = "City not found"`
-    
+
 - List the inbound schedule for an airport
-    
-    `GET /airport/inbound?code=<OVB>`
-    
+
+  `GET /airports/inbound?airport=<OVB>`
+
     - code - parameter that represents the airport code.
-    
-    *Return*:
-    
+
+  *Return*:
+
     - A list of flights arriving at the airport on the specified date, with the following information:
-        - Days of week
-        - Time of arrival
         - Flight no
-        - Origin
-    
-    Status code:
-    
+        - departureAirport
+        - departureCity
+        - arrivalAirport
+        - arrivalCity
+        - Days of week
+
+  Status code:
+
     - Status code 200 OK
-        
+
         ```json
         [
           {
-            "flight_no": "AA123",
-            "origin": "Moscow",
-            "arrival_time": "2023-05-18T15:30:00",
-            "days_of_week": [
-              "Monday",
-              "Wednesday",
-              "Friday"
-            ]
-          },
-          {
-            "flight_no": "DL456",
-            "origin": "Kazan",
-            "arrival_time": "2023-05-18T18:15:00",
-            "days_of_week": [
-              "Tuesday",
-              "Thursday",
-              "Saturday"
-            ]
-          },
+                "flightNo": "PG0006",
+                "departureAirport": "PKV",
+                "departureCity": "Псков",
+                "arrivalAirport": "DME",
+                "arrivalCity": "Москва",
+                "days": "{1,4,6}"
+            },
+            {
+                "flightNo": "PG0020",
+                "departureAirport": "UUA",
+                "departureCity": "Бугульма",
+                "arrivalAirport": "DME",
+                "arrivalCity": "Москва",
+                "days": "{1,2,3,4,5,6,7}"
+            },
         ]
         ```
-        
+
     - Status code 400 bad request
         - `"error" = "Airport not found"`
-    
+
 - List the outbound schedule for an airport
-    
-    `GET /airport/outbound?code=<OVB>`
-    
+
+  `GET /airport/outbound?airport=<OVB>`
+
     - code - parameter that represents the airport code.
-    
-    *Return*:
-    
+
+  *Return*:
+
     - A list of flights arriving at the airport on the specified date, with the following information:
-        - Days of week
-        - Time of arrival
         - Flight no
-        - Destination
-    
-    Status code:
-    
+        - departureAirport
+        - departureCity
+        - arrivalAirport
+        - arrivalCity
+        - Days of week
+
+  Status code:
+
     - Status code 200 OK
-        
+
         ```json
         [
           {
-            "flight_no": "AS123",
-            "origin": "Norilsk",
-            "arrival_time": "2023-05-18T15:30:00",
-            "days_of_week": [
-              "Wednesday",
-              "Friday"
-            ]
-          },
-          {
-            "flight_no": "DA456",
-            "origin": "Moscow",
-            "arrival_time": "2023-05-18T18:15:00",
-            "days_of_week": [
-        			"Monday",
-              "Tuesday",
-              "Thursday",
-              "Saturday"
-            ]
-          },
+                "flightNo": "PG0083",
+                "departureAirport": "OVB",
+                "departureCity": "Новосибирск",
+                "arrivalAirport": "PYJ",
+                "arrivalCity": "Удачный",
+                "days": "{1}"
+            },
+            {
+                "flightNo": "PG0186",
+                "departureAirport": "OVB",
+                "departureCity": "Новосибирск",
+                "arrivalAirport": "PEE",
+                "arrivalCity": "Пермь",
+                "days": "{1,2,3,4,5,6,7}"
+            },
         ]
         ```
-        
+
     - Status code 400 bad request
         - `"error" = "Airport not found"`
-    
+
 - List the routes connecting two *points*
-    
-    `GET /api/routes?from=<Moscow/DME>&?to=<Novosibirsk/OVE>&date<yyyy-MM-dd>&?class=<Economy/Comfort/Business>?bound=<0-...>`
-    
-    - from - parameter that represents the departure point
-    - to - parameter that represents the arrival point
-    - date - parameter that represents the flight day
-    - class - parameter that represents the seat class
+
+  `GET /routes?fromAirport=OVB&toAirport=DME&fromDate=2017-09-09&toDate=2017-09-11&seatType=Economy&bounds=<0..>`
+
+    - fromAirport - parameter that represents the departure point
+    - toAirport - parameter that represents the arrival point
+    - fromDate - parameter that represents the flight day
+    - toDate - max arrival date
+    - seatType - parameter that represents the seat class
     - bound - parameter that represents the count of bounds
-    
-    *Return* list of paths
-    
-    Status code:
-    
+
+  *Return* list of paths
+
+  Status code:
+
     - Status code 200 OK
-        
+
         ```json
         [
         {
-        "route": [
-        	{
-        		"flight_no": "AA123",
-        		"origin": "Los Angeles",
-        		"destination": "New York",
-        		"departure_time": "2023-05-18T10:00:00",
-        		"arrival_time": "2023-05-18T15:30:00",
-        		"booking_class": "Economy"
-        	},
-        	{
-        		"flight_no": "BA456",
-        		"origin": "New York",
-        		"destination": "London",
-        		"departure_time": "2023-05-18T18:00:00",
-        		"arrival_time": "2023-05-19T06:30:00",
-        		"booking_class": "Business"
-        	}
-        ]
+                "arrivalAirport": "DME",
+                "path": "PG0047->PG0048->PG0223",
+                "seatType": "Economy",
+                "departureDate": "2017-09-09 15:50:00+07",
+                "arrivalDate": "2017-09-09 19:15:00+07"
+            },
+            {
+                "arrivalAirport": "DME",
+                "path": "PG0047->PG0048->PG0223",
+                "seatType": "Economy",
+                "departureDate": "2017-09-10 15:50:00+07",
+                "arrivalDate": "2017-09-10 19:15:00+07"
+            },
         ]
         ```
-        
+
     - Status code 400 bad request
         - `"error" = "route not found"`
-    
+
 - Create a booking for a selected route for a single passenger
-    
-    `POST /booking`
-    
+
+  `PUT /booking`
+
     - body:
-        
+
         ```json
         {
-        	"route": {
-        		"flight_no": "ABC123",
-        		"origin": "JFK",
-        		"destination": "LAX",
-        		"departure_date": "2023-05-18"
-        	},
-        	"passenger": {
-        		"name": "Alex Black",
-        		"booking_class": "Economy"
-        	}
+          "flightNo": "PG0405",
+          "seatType": "Economy",
+          "date": "2017-08-25",
+          "name": "Valdemar Medvedev",
+          "passengerID": "123456789",
+          "phone": "+79137777777"
         }
         ```
-        
-    
-    *Return* number of ticket
-    
-    Status code:
-    
-    - Status code 200 OK
-        
-        ```json
+
+
+*Return* number of ticket
+
+Status code:
+
+- Status code 200 OK
+
+    ```json
         {
-          "booking_id": "ABASD123",
-          "route": {
-            "departure_airport": "JFK",
-            "arrival_airport": "LAX",
-            "departure_date": "2023-06-15",
-            "booking_class": "Economy"
-          },
-          "passenger": {
-            "name": "Alex Black"
-          }
+            "ticketNo": "9150006156494",
+            "bookingCode": "BECC2B",
+            "flightNo": "PG0405",
+            "setType": "Economy",
+            "price": "6700.00"
         }
-        ```
-        
+    ```
+
     - Status code 400 bad request
         - `"error" = "Invalid input"`
-    
+
 - Online check-in for a flight
-    
-    `POST /checkin`
-    
+
+  `PUT /checkin`
+
     - Body:
-        
-        ```json
+
+    ```json
         {
-          "booking_id": "ABASD123",
-          "flight_no": "BA456"
+          "ticketNo": "9150006156494"
         }
-        ```
-        
-    
-    Return confirm of checkin
-    
-    Status code:
-    
-    - Status code 200 OK
-        
-        ```json
+    ```
+
+
+Return confirm of checkin
+
+Status code:
+
+- Status code 200 OK
+
+    ```json
         {
-          "booking_reference": "ABC123",
-          "flight_number": "BA456",
-          "passenger_name": "Alex Black",
-          "check_in_status": "checked-in"
+            "seat": "8F",
+            "boardingNo": "6",
+            "flightNo": "PG0405"
         }
-        ```
-        
-    - Status code 400 bad request
-        - `"error" = "Invalid input"`
+    ```
+
+- Status code 400 bad request
+    - `"error" = "Invalid input"`
